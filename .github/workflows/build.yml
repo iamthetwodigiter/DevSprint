@@ -84,9 +84,20 @@ jobs:
 
       - name: Prepare dependencies
         shell: bash
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
         run: |
           set -euo pipefail
-          touch .env
+
+          test -n "$SUPABASE_URL" || { echo "::error::Missing SUPABASE_URL repository secret"; exit 1; }
+          test -n "$SUPABASE_PUBLISHABLE_KEY" || { echo "::error::Missing SUPABASE_PUBLISHABLE_KEY repository secret"; exit 1; }
+
+          cat > .env <<EOF
+          SUPABASE_URL=$SUPABASE_URL
+          SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY
+          EOF
+
           flutter pub get
 
       - name: Build split APKs
@@ -172,9 +183,20 @@ jobs:
 
       - name: Prepare dependencies
         shell: bash
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
         run: |
           set -euo pipefail
-          touch .env
+
+          test -n "$SUPABASE_URL" || { echo "::error::Missing SUPABASE_URL repository secret"; exit 1; }
+          test -n "$SUPABASE_PUBLISHABLE_KEY" || { echo "::error::Missing SUPABASE_PUBLISHABLE_KEY repository secret"; exit 1; }
+
+          cat > .env <<EOF
+          SUPABASE_URL=$SUPABASE_URL
+          SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY
+          EOF
+
           flutter config --enable-linux-desktop
           flutter pub get
 
@@ -487,9 +509,25 @@ jobs:
 
       - name: Prepare dependencies
         shell: pwsh
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
         run: |
           $ErrorActionPreference = 'Stop'
-          New-Item -ItemType File -Path .env -Force | Out-Null
+
+          if ([string]::IsNullOrWhiteSpace($env:SUPABASE_URL)) {
+            throw "Missing SUPABASE_URL repository secret"
+          }
+
+          if ([string]::IsNullOrWhiteSpace($env:SUPABASE_PUBLISHABLE_KEY)) {
+            throw "Missing SUPABASE_PUBLISHABLE_KEY repository secret"
+          }
+
+          @"
+          SUPABASE_URL=$env:SUPABASE_URL
+          SUPABASE_PUBLISHABLE_KEY=$env:SUPABASE_PUBLISHABLE_KEY
+          "@ | Set-Content -Path .env -NoNewline
+
           flutter config --enable-windows-desktop
           flutter pub get
 
