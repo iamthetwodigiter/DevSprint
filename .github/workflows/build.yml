@@ -10,8 +10,28 @@ permissions:
   contents: read
 
 jobs:
+  version:
+    name: Resolve release version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Read app version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="v$(sed -n 's/^version: \([0-9][0-9.]*\).*/\1/p' pubspec.yaml | head -n 1)"
+          test -n "$version" || { echo "Could not read version from pubspec.yaml"; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Release version: $version"
+
   build-android:
     name: Android release APKs
+    needs: version
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -37,10 +57,12 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
+          set -euo pipefail
           test -n "$ANDROID_KEYSTORE_BASE64" || { echo "Missing ANDROID_KEYSTORE_BASE64 repository secret"; exit 1; }
           test -n "$ANDROID_STORE_PASSWORD" || { echo "Missing ANDROID_STORE_PASSWORD repository secret"; exit 1; }
           test -n "$ANDROID_KEY_PASSWORD" || { echo "Missing ANDROID_KEY_PASSWORD repository secret"; exit 1; }
           test -n "$ANDROID_KEY_ALIAS" || { echo "Missing ANDROID_KEY_ALIAS repository secret"; exit 1; }
+
           echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/devsprint-upload.jks
           cat > android/key.properties <<EOF
           storePassword=$ANDROID_STORE_PASSWORD
@@ -55,17 +77,27 @@ jobs:
           touch .env
           flutter pub get
 
-      - name: Build release APKs
+      - name: Build Android split APKs
         run: flutter build apk --release --split-per-abi
 
-      - name: Rename APKs
+      - name: Build Android universal APK
+        run: flutter build apk --release
+
+      - name: Collect Android artifacts
         shell: bash
         run: |
-          version=$(sed -n "s/^version: \([0-9][0-9.]*\).*/\1/p" pubspec.yaml | head -n 1)
+          set -euo pipefail
+          version="${{ needs.version.outputs.version }}"
           mkdir -p dist
-          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk "dist/DevSprint-v${version}-armeabi-v7a.apk"
-          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk "dist/DevSprint-v${version}-arm64-v8a.apk"
-          cp build/app/outputs/flutter-apk/app-x86_64-release.apk "dist/DevSprint-v${version}-x86_64.apk"
+
+          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk \
+            "dist/DevSprint-${version}-armeabi-v7a.apk"
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk \
+            "dist/DevSprint-${version}-arm64-v8a.apk"
+          cp build/app/outputs/flutter-apk/app-x86_64-release.apk \
+            "dist/DevSprint-${version}-x86_64.apk"
+          cp build/app/outputs/flutter-apk/app-release.apk \
+            "dist/DevSprint-${version}-universal.apk"
 
       - name: Upload Android artifacts
         uses: actions/upload-artifact@v4
@@ -74,7 +106,6 @@ jobs:
           path: dist/*.apk
           if-no-files-found: error
 
-
       - name: Remove signing material
         if: always()
         shell: bash
@@ -82,6 +113,7 @@ jobs:
 
   build-linux:
     name: Linux x64 release
+    needs: version
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -90,7 +122,25 @@ jobs:
       - name: Install Linux build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libjsoncpp-dev libsecret-1-0
+          sudo apt-get install -y \
+            clang \
+            cmake \
+            desktop-file-utils \
+            dpkg-dev \
+            fakeroot \
+            libfuse2 \
+            libgtk-3-dev \
+            libsecret-1-dev \
+            libjsoncpp-dev \
+            liblzma-dev \
+            libstdc++-12-dev \
+            locate \
+            makepkg \
+            ninja-build \
+            patchelf \
+            pkg-config \
+            rpm \
+            zstd
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -104,25 +154,136 @@ jobs:
           flutter config --enable-linux-desktop
           flutter pub get
 
-      - name: Build Linux release
-        run: flutter build linux --release
+      - name: Install Fastforge
+        run: |
+          dart pub global activate fastforge
+          echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
 
-      - name: Package Linux release
+      - name: Prepare Linux packaging metadata
         shell: bash
         run: |
-          version=$(sed -n "s/^version: \([0-9][0-9.]*\).*/\1/p" pubspec.yaml | head -n 1)
-          mkdir -p dist
-          tar -C build/linux/x64/release -czf "dist/DevSprint-v${version}-linux-x64.tar.gz" bundle
+          set -euo pipefail
 
-      - name: Upload Linux artifact
+          mkdir -p linux/packaging/deb
+          mkdir -p linux/packaging/rpm
+          mkdir -p linux/packaging/appimage
+
+          cat > linux/packaging/deb/make_config.yaml <<'EOF'
+          display_name: DevSprint
+          package_name: devsprint
+          maintainer:
+            name: thetwodigiter
+            email: thetwodigiter@users.noreply.github.com
+          priority: optional
+          section: devel
+          essential: false
+          icon: assets/logo.png
+          keywords:
+            - Developer
+            - Coding
+            - Productivity
+            - Programming
+          generic_name: Developer Productivity App
+          categories:
+            - Development
+            - Utility
+          startup_notify: true
+          EOF
+
+          cat > linux/packaging/rpm/make_config.yaml <<'EOF'
+          icon: assets/logo.png
+          summary: AI-driven daily coding sprint engine
+          group: Development/Tools
+          vendor: thetwodigiter
+          packager: thetwodigiter
+          packager_email: thetwodigiter@users.noreply.github.com
+          license: Proprietary
+          url: https://github.com/thetwodigiter/devsprint
+          display_name: DevSprint
+          keywords:
+            - Developer
+            - Coding
+            - Productivity
+            - Programming
+          generic_name: Developer Productivity App
+          categories:
+            - Development
+            - Utility
+          startup_notify: true
+          EOF
+
+          cat > linux/packaging/appimage/make_config.yaml <<'EOF'
+          display_name: DevSprint
+          icon: assets/logo.png
+          keywords:
+            - Developer
+            - Coding
+            - Productivity
+            - Programming
+          generic_name: Developer Productivity App
+          categories:
+            - Development
+            - Utility
+          startup_notify: true
+          include: []
+          EOF
+
+      - name: Build Linux distribution packages
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+
+          fastforge package --platform linux --targets deb,rpm,appimage,pacman
+
+          find dist -maxdepth 3 -type f -print
+
+      - name: Build portable Linux bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ needs.version.outputs.version }}"
+
+          flutter build linux --release
+
+          tar -C build/linux/x64/release -czf \
+            "dist/DevSprint-${version}-linux-x64.tar.gz" bundle
+
+      - name: Collect Linux artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          find dist -type f \( \
+            -name '*.deb' -o \
+            -name '*.rpm' -o \
+            -name '*.AppImage' -o \
+            -name '*.pkg.tar.*' -o \
+            -name '*.tar.gz' \
+          \) -print
+
+          count="$(find dist -type f \( \
+            -name '*.deb' -o \
+            -name '*.rpm' -o \
+            -name '*.AppImage' -o \
+            -name '*.pkg.tar.*' -o \
+            -name '*.tar.gz' \
+          \) | wc -l)"
+
+          test "$count" -ge 5 || {
+            echo "Expected at least five Linux release artifacts, found $count"
+            exit 1
+          }
+
+      - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-release-x64
-          path: dist/*.tar.gz
+          path: dist/*
           if-no-files-found: error
 
   build-windows:
     name: Windows x64 release
+    needs: version
     runs-on: windows-latest
     steps:
       - name: Check out repository
@@ -149,7 +310,7 @@ jobs:
         run: |
           $version = (Select-String -Path pubspec.yaml -Pattern '^version: ([0-9.]+)' | Select-Object -First 1).Matches.Groups[1].Value
           New-Item -ItemType Directory -Path dist -Force | Out-Null
-          Compress-Archive -Path 'build/windows/x64/runner/Release/*' -DestinationPath "dist/DevSprint-v$version-windows-x64.zip" -Force
+          Compress-Archive -Path 'build/windows/x64/runner/Release/*' -DestinationPath "dist/DevSprint-$version-windows-x64.zip" -Force
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
@@ -157,3 +318,51 @@ jobs:
           name: windows-release-x64
           path: dist/*.zip
           if-no-files-found: error
+
+  release:
+    name: Create GitHub release
+    needs:
+      - version
+      - build-android
+      - build-linux
+      - build-windows
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Android artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: android-release-apks
+          path: release-assets/android
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-release-x64
+          path: release-assets/linux
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-release-x64
+          path: release-assets/windows
+
+      - name: List release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          find release-assets -type f -print
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ needs.version.outputs.version }}
+          name: DevSprint ${{ needs.version.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
+          files: |
+            release-assets/android/*.apk
+            release-assets/linux/*
+            release-assets/windows/*.zip
