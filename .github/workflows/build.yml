@@ -138,7 +138,6 @@ jobs:
             libstdc++-12-dev \
             locate \
             libarchive-tools \
-            fakeroot \
             ninja-build \
             patchelf \
             pkg-config \
@@ -170,6 +169,7 @@ jobs:
           mkdir -p linux/packaging/deb
           mkdir -p linux/packaging/rpm
           mkdir -p linux/packaging/appimage
+          mkdir -p linux/packaging/pacman
 
           cat > linux/packaging/deb/make_config.yaml <<'EOF'
           display_name: DevSprint
