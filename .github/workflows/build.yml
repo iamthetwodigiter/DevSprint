@@ -224,7 +224,7 @@ jobs:
             name: thetwodigiter
             email: thetwodigiter@users.noreply.github.com
           installed_size: 50000
-          package_release: 1
+          package_release: "1"
           licenses:
             - custom
           groups:
