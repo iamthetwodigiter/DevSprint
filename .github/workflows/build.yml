@@ -185,13 +185,9 @@ jobs:
       - name: Install Fastforge
         shell: bash
         run: |
-          set -u
-
-          if dart pub global activate fastforge 0.6.12; then
-            echo "Fastforge installed successfully."
-          else
-            echo "::warning::Fastforge could not be installed. DEB/RPM/AppImage packaging will be skipped."
-          fi
+          set -euo pipefail
+          dart pub global activate fastforge 0.6.12
+          echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
 
       - name: Install AppImage tooling
         shell: bash
@@ -281,42 +277,42 @@ jobs:
           EOF
 
       - name: Build DEB package
-        id: deb
-        continue-on-error: true
         shell: bash
         run: |
-          set -u
-
-          if dart pub global run fastforge package --platform linux --targets deb; then
-            echo "DEB package built successfully."
+          set +e
+          fastforge package --platform linux --targets deb
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            echo "::warning::DEB package failed. Continuing with the remaining Linux artifacts."
           else
-            echo "::warning::DEB package could not be built. Continuing with the remaining Linux artifacts."
+            echo "DEB package built successfully."
           fi
 
       - name: Build RPM package
-        id: rpm
-        continue-on-error: true
         shell: bash
         run: |
-          set -u
-
-          if dart pub global run fastforge package --platform linux --targets rpm; then
-            echo "RPM package built successfully."
+          set +e
+          fastforge package --platform linux --targets rpm
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            echo "::warning::RPM package failed. Continuing with the remaining Linux artifacts."
           else
-            echo "::warning::RPM package could not be built. Continuing with the remaining Linux artifacts."
+            echo "RPM package built successfully."
           fi
 
       - name: Build AppImage package
-        id: appimage
-        continue-on-error: true
         shell: bash
         run: |
-          set -u
-
-          if dart pub global run fastforge package --platform linux --targets appimage; then
-            echo "AppImage package built successfully."
+          set +e
+          fastforge package --platform linux --targets appimage
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            echo "::warning::AppImage package failed. Continuing with the remaining Linux artifacts."
           else
-            echo "::warning::AppImage package could not be built. Continuing with the remaining Linux artifacts."
+            echo "AppImage package built successfully."
           fi
 
       - name: Build portable Linux archive
