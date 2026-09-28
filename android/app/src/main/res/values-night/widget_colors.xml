@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="widget_background">#141318</color>
+    <color name="widget_empty_cell">#303036</color>
+    <color name="widget_primary_text">#E7E1E8</color>
+    <color name="widget_secondary_text">#AAA6AF</color>
+    <color name="widget_success">#91D5A8</color>
+    <color name="widget_error">#FFB4AB</color>
+</resources>

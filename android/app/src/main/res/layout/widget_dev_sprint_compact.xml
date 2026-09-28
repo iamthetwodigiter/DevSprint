@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/widget_root" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="12dp" android:background="@drawable/widget_background">
+<TextView android:id="@+id/widget_month" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="September" android:textColor="@color/widget_primary_text" android:textStyle="bold" android:textSize="13sp"/>
+<GridLayout android:id="@+id/widget_heatmap_grid" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:columnCount="7" android:rowCount="3" android:layout_marginTop="8dp"/>
+<LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="6dp">
+<TextView android:id="@+id/widget_completed" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="0" android:textColor="@color/widget_success" android:textStyle="bold"/>
+<TextView android:id="@+id/widget_failed" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="0" android:textColor="@color/widget_error" android:textStyle="bold"/>
+<TextView android:id="@+id/widget_average" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="—" android:textColor="@color/widget_primary_text" android:textStyle="bold"/>
+<TextView android:id="@+id/widget_focused" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="0m" android:textColor="@color/widget_primary_text" android:textStyle="bold"/>
+</LinearLayout>
+</LinearLayout>
