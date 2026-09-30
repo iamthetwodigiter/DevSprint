@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/app_card.dart';
+import '../widgets/app_page.dart';
 
 class LegalScreen extends StatelessWidget {
   final String title;
@@ -84,9 +85,9 @@ class LegalScreen extends StatelessWidget {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: Text(title)),
-      body: SafeArea(
+      body: AppPage(
         child: ListView.separated(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
           itemCount: sections.length,
           separatorBuilder: (_, _) => const SizedBox(height: 12),
           itemBuilder: (context, index) {

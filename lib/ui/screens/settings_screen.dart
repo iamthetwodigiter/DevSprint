@@ -13,6 +13,7 @@ import '../../providers/task_notifier.dart';
 import '../../services/android_auto_sync_service.dart';
 import '../../services/user_preferences_service.dart';
 import '../widgets/app_card.dart';
+import '../widgets/app_page.dart';
 import 'legal_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -554,24 +555,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     if (loading) return const Center(child: CircularProgressIndicator());
 
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      children: [
-        Text(
-          'Settings',
-          style: theme.textTheme.displaySmall?.copyWith(
-            fontFamily: GoogleFonts.ubuntu().fontFamily,
-            fontWeight: FontWeight.w800,
+    return AppPage(
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+        children: [
+          const AppPageHeader(
+            eyebrow: 'Settings',
+            title: 'Make DevSprint yours.',
+            subtitle: 'Challenge preferences, appearance, AI, sync, and privacy.',
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Tune the parts of DevSprint that should adapt to you. The core sprint workspace stays the same.',
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: cs.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 4),
         _sectionLabel(context, 'Challenge defaults'),
         const SizedBox(height: 10),
         AppCard(
@@ -636,27 +629,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 leading: const Icon(Icons.brightness_6_outlined),
                 title: const Text('Theme'),
                 subtitle: Text(_themeLabel(appearance.mode)),
-                trailing: SegmentedButton<ThemeMode>(
-                  showSelectedIcon: false,
-                  segments: const [
-                    ButtonSegment(
-                      value: ThemeMode.system,
-                      icon: Icon(Icons.settings_suggest_outlined),
-                    ),
-                    ButtonSegment(
-                      value: ThemeMode.light,
-                      icon: Icon(Icons.light_mode_outlined),
-                    ),
-                    ButtonSegment(
-                      value: ThemeMode.dark,
-                      icon: Icon(Icons.dark_mode_outlined),
-                    ),
-                  ],
-                  selected: {appearance.mode},
-                  onSelectionChanged: (values) => ref
-                      .read(appearanceProvider.notifier)
-                      .setMode(values.first),
-                ),
+              ),
+              SegmentedButton<ThemeMode>(
+                showSelectedIcon: false,
+                expandedInsets: EdgeInsets.zero,
+                segments: const [
+                  ButtonSegment(
+                    value: ThemeMode.system,
+                    icon: Icon(Icons.settings_suggest_outlined),
+                    label: Text('System'),
+                  ),
+                  ButtonSegment(
+                    value: ThemeMode.light,
+                    icon: Icon(Icons.light_mode_outlined),
+                    label: Text('Light'),
+                  ),
+                  ButtonSegment(
+                    value: ThemeMode.dark,
+                    icon: Icon(Icons.dark_mode_outlined),
+                    label: Text('Dark'),
+                  ),
+                ],
+                selected: {appearance.mode},
+                onSelectionChanged: (values) => ref
+                    .read(appearanceProvider.notifier)
+                    .setMode(values.first),
               ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
@@ -914,7 +911,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           onPressed: _reset,
           child: const Text('Reset personalisation'),
         ),
-      ],
+        ],
+      ),
     );
   }
 

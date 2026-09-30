@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:devsprint/providers/appearance_provider.dart';
 import 'package:dynamic_color/dynamic_color.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -114,6 +115,14 @@ class DevSprintApp extends ConsumerWidget {
             colorScheme: scheme,
             fontFamily: GoogleFonts.getFont(appearance.fontFamily).fontFamily,
             visualDensity: VisualDensity.standard,
+            pageTransitionsTheme: const PageTransitionsTheme(
+              builders: {
+                TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
+                TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+                TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
+                TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+              },
+            ),
           );
 
           final textTheme = base.textTheme;
@@ -160,49 +169,108 @@ class DevSprintApp extends ConsumerWidget {
               ),
             ),
             scaffoldBackgroundColor: scheme.surface,
-            appBarTheme: const AppBarTheme(
+            dividerTheme: DividerThemeData(
+              color: scheme.outlineVariant.withValues(alpha: .55),
+              space: 1,
+              thickness: 1,
+            ),
+            appBarTheme: AppBarTheme(
               centerTitle: false,
               scrolledUnderElevation: 0,
+              backgroundColor: scheme.surface,
+              surfaceTintColor: Colors.transparent,
+              toolbarHeight: 68,
+              titleTextStyle: textTheme.titleLarge?.copyWith(
+                fontFamily: displayFont,
+                fontWeight: FontWeight.w800,
+                color: scheme.onSurface,
+              ),
             ),
             cardTheme: CardThemeData(
               elevation: 0,
               margin: EdgeInsets.zero,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(20),
               ),
             ),
             inputDecorationTheme: InputDecorationTheme(
               filled: true,
+              fillColor: scheme.surfaceContainerHighest.withValues(alpha: .48),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 15,
+              ),
+              floatingLabelBehavior: FloatingLabelBehavior.auto,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide.none,
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide.none,
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide(color: scheme.primary, width: 2),
               ),
             ),
             filledButtonTheme: FilledButtonThemeData(
               style: FilledButton.styleFrom(
-                minimumSize: const Size(0, 52),
+                minimumSize: const Size(0, 48),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(14),
                 ),
               ),
             ),
             outlinedButtonTheme: OutlinedButtonThemeData(
               style: OutlinedButton.styleFrom(
-                minimumSize: const Size(0, 48),
+                minimumSize: const Size(0, 46),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 11,
+                ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(14),
                 ),
               ),
             ),
-            navigationBarTheme: const NavigationBarThemeData(height: 72),
+            navigationBarTheme: NavigationBarThemeData(
+              height: 72,
+              elevation: 0,
+              backgroundColor: scheme.surface,
+              surfaceTintColor: Colors.transparent,
+              indicatorColor: scheme.secondaryContainer,
+              labelTextStyle: const WidgetStatePropertyAll(
+                TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+              ),
+            ),
+            navigationRailTheme: NavigationRailThemeData(
+              backgroundColor: scheme.surface,
+              indicatorColor: scheme.secondaryContainer,
+              useIndicator: true,
+              groupAlignment: -0.7,
+              labelType: NavigationRailLabelType.all,
+              selectedLabelTextStyle: TextStyle(
+                color: scheme.onSurface,
+                fontWeight: FontWeight.w700,
+              ),
+              unselectedLabelTextStyle: TextStyle(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+            chipTheme: ChipThemeData(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+                side: BorderSide(
+                  color: scheme.outlineVariant.withValues(alpha: .6),
+                ),
+              ),
+            ),
             extensions: [_DevSprintTypography(codeFontFamily: codeFont)],
           );
         }

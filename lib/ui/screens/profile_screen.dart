@@ -10,6 +10,7 @@ import '../../services/profile_image_service.dart';
 import '../../services/user_preferences_service.dart';
 import '../widgets/activity_widgets.dart';
 import '../widgets/app_card.dart';
+import '../widgets/app_page.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -236,37 +237,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     final photoUrl = auth.signedIn ? auth.photoUrl : null;
 
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Developer profile',
-                    style: theme.textTheme.displaySmall?.copyWith(
-                      fontFamily: GoogleFonts.ubuntu().fontFamily,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Your identity, progress and developer journey.',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 20),
+    return AppPage(
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
+        children: [
+          const AppPageHeader(
+            eyebrow: 'Profile',
+            title: 'Your developer workspace.',
+            subtitle: 'Identity, history, strengths, and momentum in one place.',
+          ),
+        const SizedBox(height: 4),
 
         AppCard(
           padding: const EdgeInsets.all(16),
@@ -375,23 +355,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
         Row(
           children: [
-            Expanded(child: _stat(context, '${records.length}', 'sprints')),
-            const SizedBox(width: 10),
             Expanded(
-              child: _stat(
-                context,
-                '${records.where((e) => e['success'] == true).length}',
-                'passed',
+              child: AppMetric(
+                value: '${records.length}',
+                label: 'sprints',
+                icon: Icons.bolt_rounded,
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: _stat(
-                context,
-                records.isEmpty
+              child: AppMetric(
+                value: '${records.where((e) => e['success'] == true).length}',
+                label: 'passed',
+                icon: Icons.check_circle_outline_rounded,
+                color: cs.primary,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: AppMetric(
+                value: records.isEmpty
                     ? '—'
                     : '${(records.map((e) => (e['score'] as num?)?.toInt() ?? 0).reduce((a, b) => a + b) / records.length).round()}',
-                'avg score',
+                label: 'average score',
+                icon: Icons.grade_outlined,
               ),
             ),
           ],
@@ -422,25 +409,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ScoreProgressionCard(records: records),
 
         const SizedBox(height: 20),
-      ],
-    );
-  }
-
-  Widget _stat(BuildContext context, String value, String label) {
-    final theme = Theme.of(context);
-
-    return AppCard(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(label, style: theme.textTheme.labelMedium),
         ],
       ),
     );

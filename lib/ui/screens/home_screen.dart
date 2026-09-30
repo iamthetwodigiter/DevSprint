@@ -13,6 +13,7 @@ import '../../services/hive_service.dart';
 import '../../services/supabase_sync_service.dart';
 import '../widgets/activity_widgets.dart';
 import '../widgets/app_card.dart';
+import '../widgets/app_page.dart';
 import 'background_evaluations_screen.dart';
 import 'focus_mode_screen.dart';
 import 'onboarding_screen.dart';
@@ -43,6 +44,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   String developerNote = '';
 
   final preferences = UserPreferencesService();
+  final focusController = TextEditingController();
 
   @override
   void initState() {
@@ -171,8 +173,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       profileImagePath =
           data['profileImagePath'] ?? '';
 
-      developerNote =
-          data['bio'] ?? '';
+      developerNote = data['bio'] ?? '';
+      focusController.value = TextEditingValue(text: focus);
     });
   }
 
@@ -198,121 +200,149 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         .where((job) => job['status'] == 'running')
         .length;
 
+    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
+    final destinations = [
+      const NavigationDestination(
+        icon: Icon(Icons.bolt_outlined),
+        selectedIcon: Icon(Icons.bolt_rounded),
+        label: 'Sprint',
+      ),
+      const NavigationDestination(
+        icon: Icon(Icons.insights_outlined),
+        selectedIcon: Icon(Icons.insights_rounded),
+        label: 'Progress',
+      ),
+      NavigationDestination(
+        icon: _profileNavIcon(context, auth, false),
+        selectedIcon: _profileNavIcon(context, auth, true),
+        label: 'Profile',
+      ),
+      const NavigationDestination(
+        icon: Icon(Icons.tune_outlined),
+        selectedIcon: Icon(Icons.tune_rounded),
+        label: 'Settings',
+      ),
+    ];
+
+    final page = switch (tab) {
+      0 => _buildSprint(context, taskState),
+      1 => const ProgressScreen(),
+      2 => const ProfileScreen(),
+      _ => const SettingsScreen(),
+    };
+
     return Scaffold(
       appBar: AppBar(
-        titleSpacing: 24,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        titleSpacing: 20,
+        title: Row(
           children: [
-            Text(
-              'DevSprint',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(11),
+              ),
+              padding: const EdgeInsets.all(7),
+              child: _profileNavIcon(context, auth, false),
             ),
-            Text(
-              'BUILD SOMETHING TODAY',
-              style: Theme.of(context)
-                  .textTheme
-                  .labelSmall
-                  ?.copyWith(
-                    letterSpacing: 1.4,
-                  ),
-            ),
+            const SizedBox(width: 11),
+            const Text('DevSprint'),
           ],
         ),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 12),
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              IconButton(
-                tooltip: 'Background evaluations',
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const BackgroundEvaluationsScreen(),
+        actions: [
+          if (runningEvaluations > 0)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Badge(
+                label: Text('$runningEvaluations'),
+                child: IconButton(
+                  tooltip: 'Evaluations',
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const BackgroundEvaluationsScreen(),
+                    ),
                   ),
+                  icon: const Icon(Icons.auto_awesome_outlined),
                 ),
-                icon: const Icon(Icons.pending_actions_rounded),
               ),
-              if (runningEvaluations > 0)
-                Positioned(
-                  right: 4,
-                  top: 4,
-                  child: Container(
-                    constraints: const BoxConstraints(minWidth: 18),
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.error,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '$runningEvaluations',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onError,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
+            )
+          else
+            IconButton(
+              tooltip: 'Evaluations',
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const BackgroundEvaluationsScreen(),
                 ),
-            ],
-          ),
-        ),
-      ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: tab,
-        onDestinationSelected: (value) {
-          setState(() => tab = value);
-
-          if (value == 0 || value == 2) {
-            _loadPreferences();
-          }
-        },
-        destinations: [
-          const NavigationDestination(
-            icon: Icon(Icons.space_dashboard_outlined),
-            selectedIcon: Icon(Icons.space_dashboard),
-            label: 'Sprint',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.insights_outlined),
-            selectedIcon: Icon(Icons.insights),
-            label: 'Progress',
-          ),
-          NavigationDestination(
-            icon: _profileNavIcon(
-              context,
-              auth,
-              false,
+              ),
+              icon: const Icon(Icons.auto_awesome_outlined),
             ),
-            selectedIcon: _profileNavIcon(
-              context,
-              auth,
-              true,
-            ),
-            label: 'Profile',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
+          const SizedBox(width: 8),
         ],
       ),
-      body: switch (tab) {
-        0 => _buildSprint(context, taskState),
-        1 => const ProgressScreen(),
-        2 => const ProfileScreen(),
-        _ => const SettingsScreen(),
-      },
+      bottomNavigationBar: isDesktop
+          ? null
+          : NavigationBar(
+              selectedIndex: tab,
+              onDestinationSelected: _selectTab,
+              destinations: destinations,
+            ),
+      body: isDesktop
+          ? Row(
+              children: [
+                NavigationRail(
+                  selectedIndex: tab,
+                  onDestinationSelected: _selectTab,
+                  leading: Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: IconButton(
+                      tooltip: 'New sprint',
+                      onPressed: generate,
+                      style: IconButton.styleFrom(
+                        backgroundColor:
+                            Theme.of(context).colorScheme.primaryContainer,
+                        foregroundColor:
+                            Theme.of(context).colorScheme.onPrimaryContainer,
+                      ),
+                      icon: const Icon(Icons.add_rounded),
+                    ),
+                  ),
+                  destinations: [
+                    const NavigationRailDestination(
+                      icon: Icon(Icons.bolt_outlined),
+                      selectedIcon: Icon(Icons.bolt_rounded),
+                      label: Text('Sprint'),
+                    ),
+                    const NavigationRailDestination(
+                      icon: Icon(Icons.insights_outlined),
+                      selectedIcon: Icon(Icons.insights_rounded),
+                      label: Text('Progress'),
+                    ),
+                    NavigationRailDestination(
+                      icon: _profileNavIcon(context, auth, false),
+                      selectedIcon: _profileNavIcon(context, auth, true),
+                      label: const Text('Profile'),
+                    ),
+                    const NavigationRailDestination(
+                      icon: Icon(Icons.tune_outlined),
+                      selectedIcon: Icon(Icons.tune_rounded),
+                      label: Text('Settings'),
+                    ),
+                  ],
+                ),
+                const VerticalDivider(width: 1),
+                Expanded(child: page),
+              ],
+            )
+          : page,
     );
+  }
+
+  void _selectTab(int value) {
+    setState(() => tab = value);
+    if (value == 0 || value == 2) _loadPreferences();
   }
 
   Widget _profileNavIcon(
@@ -393,13 +423,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     BuildContext context,
     AsyncValue taskState,
   ) {
-    return RefreshIndicator(
-      onRefresh: generate,
-      child: ListView(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 20,
-        ),
+    return AppPage(
+      child: RefreshIndicator(
+        onRefresh: generate,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
         children: [
           Text(
             'Today’s challenge',
@@ -488,17 +516,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 .getSprintRecords(),
           ),
           const SizedBox(height: 24),
-          const SectionLabel(
-            title: 'Sprint setup',
-            action: 'before you generate',
-          ),
+          const SectionLabel(title: 'Sprint preferences'),
           const SizedBox(height: 10),
           AppCard(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 15,
-              vertical: 20,
-            ),
-            child: Column(
+            padding: EdgeInsets.zero,
+            child: ExpansionTile(
+              initiallyExpanded: taskState.value == null,
+              tilePadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+              childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+              leading: const Icon(Icons.tune_rounded),
+              title: const Text('Shape your next sprint'),
+              subtitle: Text('$language • $level • $practiceType'),
               children: [
                 DropdownButtonFormField<String>(
                   initialValue: language,
@@ -606,9 +634,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Icons.track_changes_rounded,
                     ),
                   ),
-                  controller: TextEditingController(
-                    text: focus,
-                  ),
+                  controller: focusController,
                   onChanged: (v) => focus = v,
                 ),
                 const SizedBox(height: 18),
@@ -630,6 +656,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -693,147 +720,156 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildEmptyState(
-    BuildContext context,
-  ) {
-    final cs =
-        Theme.of(context).colorScheme;
+  Widget _buildEmptyState(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return AppCard(
+      color: cs.primaryContainer.withValues(alpha: .42),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 620;
+          final intro = Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: cs.primary,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(Icons.bolt_rounded, color: cs.onPrimary),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'No sprint ready',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Set your preferences below, then generate a focused coding challenge.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+          final action = FilledButton.icon(
+            onPressed: generate,
+            icon: const Icon(Icons.auto_awesome_rounded),
+            label: const Text('Generate'),
+          );
+          if (compact) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [intro, const SizedBox(height: 16), action],
+            );
+          }
+          return Row(children: [Expanded(child: intro), const SizedBox(width: 16), action]);
+        },
+      ),
+    );
+  }
+
+  Widget _buildTaskCard(BuildContext context, dynamic task) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
 
     return AppCard(
-      child: Container(
-        constraints: const BoxConstraints(
-          minHeight: 200,
-        ),
-        alignment: Alignment.center,
-        child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.rocket_launch_rounded,
-              size: 50,
-              color: cs.primary,
+      color: cs.primaryContainer.withValues(alpha: .5),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _metaChip(context, Icons.schedule_rounded, '${task.deadlineMinutes} min'),
+              _metaChip(context, Icons.signal_cellular_alt_rounded, task.difficulty),
+              _metaChip(context, Icons.code_rounded, task.language),
+              _metaChip(context, Icons.category_outlined, task.practiceType),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Text(
+            task.title,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: cs.onPrimaryContainer,
+              height: 1.12,
             ),
-            const SizedBox(height: 16),
-            Text(
-              'No sprint loaded',
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineSmall
-                  ?.copyWith(
-                    fontWeight: FontWeight.w700,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            task.summary,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: cs.onPrimaryContainer.withValues(alpha: .82),
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Icon(Icons.auto_awesome_rounded, size: 16, color: cs.primary),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  task.modelUsed == null ? 'AI-generated sprint' : task.modelUsed!,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: cs.onPrimaryContainer.withValues(alpha: .7),
                   ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Choose your stack below and let the engine build a challenge around it.',
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            FilledButton.icon(
-              onPressed: generate,
-              icon: const Icon(
-                Icons.bolt_rounded,
+                ),
               ),
-              label: const Text(
-                'Generate sprint',
+              FilledButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => FocusModeScreen(task: task)),
+                ),
+                icon: const Icon(Icons.play_arrow_rounded),
+                label: const Text('Start sprint'),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildTaskCard(
-    BuildContext context,
-    dynamic task,
-  ) {
-    final cs =
-        Theme.of(context).colorScheme;
-
-    return Card(
-      elevation: 0,
-      color: cs.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(15),
-        child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-          children: [
-            Wrap(
-              spacing: 8,
-              children: [
-                Chip(
-                  avatar: const Icon(
-                    Icons.timer_outlined,
-                    size: 17,
-                  ),
-                  label: Text(
-                    '${task.deadlineMinutes} min',
-                  ),
-                ),
-                Chip(
-                  label: Text(task.difficulty),
-                ),
-                Chip(
-                  label: Text(task.language),
-                ),
-                Chip(
-                  label: Text(task.practiceType),
-                ),
-                if (task.modelUsed != null)
-                  Chip(
-                    avatar: const Icon(
-                      Icons.auto_awesome,
-                      size: 16,
-                    ),
-                    label: Text(
-                      task.modelUsed!,
-                    ),
-                  ),
-              ],
+  Widget _metaChip(BuildContext context, IconData icon, String label) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: cs.surface.withValues(alpha: .38),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: cs.onPrimaryContainer.withValues(alpha: .8)),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: cs.onPrimaryContainer,
+              fontWeight: FontWeight.w700,
             ),
-            const SizedBox(height: 18),
-            Text(
-              task.title,
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineMedium
-                  ?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: cs.onPrimaryContainer,
-                  ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              task.summary,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyLarge
-                  ?.copyWith(
-                    color: cs.onPrimaryContainer,
-                  ),
-            ),
-            const SizedBox(height: 22),
-            FilledButton.icon(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      FocusModeScreen(task: task),
-                ),
-              ),
-              icon: const Icon(
-                Icons.play_arrow_rounded,
-              ),
-              label: const Text(
-                'Open challenge',
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+
+  @override
+  void dispose() {
+    focusController.dispose();
+    super.dispose();
+  }
+
 }

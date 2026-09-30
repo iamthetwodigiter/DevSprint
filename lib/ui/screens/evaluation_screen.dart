@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/evaluation_notifier.dart';
 import '../widgets/app_card.dart';
+import '../widgets/app_page.dart';
 
 String _friendlyError(Object error) {
   final message = error.toString().toLowerCase();
@@ -77,32 +78,29 @@ class EvaluationScreen extends ConsumerWidget {
           if (evaluation == null) {
             return const Center(child: Text('No evaluation available.'));
           }
-          return ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-            children: [
-              Text(
-                'You shipped.',
-                style: Theme.of(context).textTheme.displaySmall
-                    ?.copyWith(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                evaluation.summaryFeedback,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 24),
+          return AppPage(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+              children: [
+                AppPageHeader(
+                  eyebrow: 'Evaluation',
+                  title: 'You shipped.',
+                  subtitle: evaluation.summaryFeedback,
+                ),
+                const SizedBox(height: 4),
               AppCard(
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 116,
-                      height: 116,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final compact = constraints.maxWidth < 560;
+                    final scoreView = SizedBox(
+                      width: compact ? 92 : 116,
+                      height: compact ? 92 : 116,
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
                           CircularProgressIndicator(
                             value: evaluation.overallScore / 100,
-                            strokeWidth: 10,
+                            strokeWidth: compact ? 8 : 10,
                             backgroundColor: Theme.of(context)
                                 .colorScheme
                                 .surfaceContainerHighest,
@@ -114,27 +112,35 @@ class EvaluationScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(width: 22),
-                    Expanded(
-                      child: Column(
+                    );
+                    final details = Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Overall score',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(evaluation.verdict),
+                        const SizedBox(height: 10),
+                        const Text('100 points across four engineering dimensions.'),
+                      ],
+                    );
+                    if (compact) {
+                      return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Overall score',
-                            style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(fontWeight: FontWeight.w700),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(evaluation.verdict),
-                          const SizedBox(height: 10),
-                          const Text(
-                            '100 points across four engineering dimensions.',
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                        children: [scoreView, const SizedBox(height: 16), details],
+                      );
+                    }
+                    return Row(
+                      children: [
+                        scoreView,
+                        const SizedBox(width: 22),
+                        Expanded(child: details),
+                      ],
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 14),
@@ -183,7 +189,8 @@ class EvaluationScreen extends ConsumerWidget {
                 label: const Text('Back to dashboard'),
               ),
             ],
-          );
+          ),
+        );
         },
       ),
     );

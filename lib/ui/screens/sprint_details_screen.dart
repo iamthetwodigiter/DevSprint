@@ -4,6 +4,7 @@ import 'package:flutter_highlight/themes/night-owl.dart';
 import 'package:markdown_widget/markdown_widget.dart';
 
 import '../widgets/app_card.dart';
+import '../widgets/app_page.dart';
 
 class SprintDetailsScreen extends StatelessWidget {
   final Map<String, dynamic> record;
@@ -27,7 +28,7 @@ class SprintDetailsScreen extends StatelessWidget {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
               child: AppCard(
                 child: Row(
                   children: [
@@ -101,14 +102,16 @@ class SprintDetailsScreen extends StatelessWidget {
             ? 'No problem statement saved.'
             : statement;
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
-      children: [
-        AppCard(
-          padding: EdgeInsets.zero,
-          child: _buildProblemMarkdown(context, markdown),
-        ),
-      ],
+    return AppPage(
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(24, 14, 24, 32),
+        children: [
+          AppCard(
+            padding: EdgeInsets.zero,
+            child: _buildProblemMarkdown(context, markdown),
+          ),
+        ],
+      ),
     );
   }
 
@@ -236,12 +239,13 @@ class SprintDetailsScreen extends StatelessWidget {
     final code = submission['code'] as String? ?? '';
     final source = submission['source'] as String? ?? '';
     final solution = code.isNotEmpty ? code : source;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
-      children: [
-        AppCard(
-          padding: EdgeInsets.zero,
-          child: Container(
+    return AppPage(
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(24, 14, 24, 32),
+        children: [
+          AppCard(
+            padding: EdgeInsets.zero,
+            child: Container(
             width: double.infinity,
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
@@ -256,7 +260,8 @@ class SprintDetailsScreen extends StatelessWidget {
             ),
           ),
         ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -266,7 +271,8 @@ class SprintDetailsScreen extends StatelessWidget {
   ) {
     final files =
         (submission['files'] as List?)?.map((e) => '$e').toList() ?? const [];
-    return ListView(
+    return AppPage(
+      child: ListView(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
       children: [
         AppCard(
@@ -310,7 +316,8 @@ class SprintDetailsScreen extends StatelessWidget {
             ),
           ),
         ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -324,7 +331,8 @@ class SprintDetailsScreen extends StatelessWidget {
             .toList() ??
         const [];
     final scores = Map<String, dynamic>.from(evaluation['sub_scores'] ?? {});
-    return ListView(
+    return AppPage(
+      child: ListView(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
       children: [
         AppCard(
@@ -395,7 +403,8 @@ class SprintDetailsScreen extends StatelessWidget {
             ],
           ),
         ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -472,7 +481,8 @@ class SprintDetailsScreen extends StatelessWidget {
       'Model': task['model_used'] ?? 'Unknown',
       'Completed': record['completedAt'] ?? 'Unknown',
     };
-    return ListView(
+    return AppPage(
+      child: ListView(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
       children: [
         AppCard(
@@ -488,7 +498,8 @@ class SprintDetailsScreen extends StatelessWidget {
                 .toList(),
           ),
         ),
-      ],
+        ],
+      ),
     );
   }
 }

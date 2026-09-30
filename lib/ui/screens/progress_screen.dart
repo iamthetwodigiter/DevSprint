@@ -5,6 +5,7 @@ import '../../services/hive_service.dart';
 import '../../services/user_preferences_service.dart';
 import '../widgets/activity_widgets.dart';
 import '../widgets/app_card.dart';
+import '../widgets/app_page.dart';
 import 'sprint_details_screen.dart';
 
 class ProgressScreen extends ConsumerStatefulWidget {
@@ -167,37 +168,43 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
             return date != null && isSameDay(date, selectedDay);
           }).toList();
 
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      children: [
-        Text(
-          'Your progress',
-          style: theme.textTheme.displaySmall?.copyWith(
-            fontWeight: FontWeight.w800,
+    return AppPage(
+      child: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        children: [
+          const AppPageHeader(
+            eyebrow: 'Progress',
+            title: 'See the work adding up.',
+            subtitle: 'A clear record of what you practiced, finished, and learned.',
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'A record of the work you actually finished.',
-          style: theme.textTheme.bodyLarge,
-        ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 4),
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Expanded(
-              child: _stat(context, '${passed.length}', 'passed', cs.primary),
+              child: AppMetric(
+                value: '${passed.length}',
+                label: 'passed',
+                icon: Icons.check_circle_outline_rounded,
+                color: cs.primary,
+              ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 5),
             Expanded(
-              child: _stat(context, '${failed.length}', 'failed', cs.error),
+              child: AppMetric(
+                value: '${failed.length}',
+                label: 'needs another run',
+                icon: Icons.replay_rounded,
+                color: cs.error,
+                
+              ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 5),
             Expanded(
-              child: _stat(
-                context,
-                records.isEmpty ? '—' : average.toStringAsFixed(0),
-                'avg score',
-                null,
+              child: AppMetric(
+                value: records.isEmpty ? '—' : average.toStringAsFixed(0),
+                label: 'average score',
+                icon: Icons.grade_outlined,
               ),
             ),
           ],
@@ -346,7 +353,8 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
           )
         else
           ...selectedRecords.map((record) => _recordCard(context, record)),
-      ],
+        ],
+      ),
     );
   }
 
@@ -461,25 +469,5 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
     );
   }
 
-  Widget _stat(
-    BuildContext context,
-    String value,
-    String label,
-    Color? accent,
-  ) {
-    return AppCard(
-      padding: const EdgeInsets.all(10),
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: Theme.of(context).textTheme.headlineMedium
-                ?.copyWith(fontWeight: FontWeight.w800, color: accent),
-          ),
-          const SizedBox(height: 4),
-          Text(label, style: Theme.of(context).textTheme.labelMedium),
-        ],
-      ),
-    );
-  }
+
 }

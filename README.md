@@ -70,7 +70,7 @@ DevSprint is a focused, AI-driven coding practice app for developers who want to
 
 ### Current release
 
-**Version:** `1.0.0`
+**Version:** `1.1.0`
 
 ### Supported platforms
 - Android

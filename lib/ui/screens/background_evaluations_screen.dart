@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/evaluation_jobs_provider.dart';
 import '../widgets/app_card.dart';
+import '../widgets/app_page.dart';
 import 'sprint_details_screen.dart';
 
 class BackgroundEvaluationsScreen extends ConsumerWidget {
@@ -15,17 +16,17 @@ class BackgroundEvaluationsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Background evaluations')),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-        children: [
-          Text(
-            'Evaluation queue',
-            style: theme.textTheme.displaySmall?.copyWith(
-              fontWeight: FontWeight.w800,
+      appBar: AppBar(title: const Text('Evaluations')),
+      body: AppPage(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
+          children: [
+            const AppPageHeader(
+              eyebrow: 'AI review',
+              title: 'Evaluation queue',
+              subtitle: 'Keep coding while DevSprint reviews your submissions.',
             ),
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Text(
             running == 0
                 ? 'Your completed and interrupted evaluations stay here for review.'
@@ -58,7 +59,8 @@ class BackgroundEvaluationsScreen extends ConsumerWidget {
                   padding: const EdgeInsets.only(bottom: 12),
                   child: _jobCard(context, ref, job),
                 )),
-        ],
+          ],
+        ),
       ),
     );
   }
